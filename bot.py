@@ -16,7 +16,7 @@ PROJECT_ID     = "anime-world-7d366"
 EARN_PER_REFER = 0.30
 
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN not set!")
+    raise ValueError("8609914878:AAEaCwn65oa0J05U7VuUk-BqwM-FPVbSryY")
 
 def get_day_key():
     ist = timezone(timedelta(hours=5, minutes=30))
