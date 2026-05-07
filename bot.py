@@ -8,7 +8,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 
-BOT_TOKEN      = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN      = os.environ.get("8609914878:AAEaCwn65oa0J05U7VuUk-BqwM-FPVbSryY", "")
 BOT_USERNAME   = "H_Anime_Hub777_Bot"
 APP_URL        = "https://shibnathsarkar49-collab.github.io/Anime-World-/"
 FIREBASE_KEY   = "AIzaSyCpnVJVXlNf2dE6p1Bw522Xh2n62bx5LVw"
