@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>TeleShort Link</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg:#0a1120; --card:#131c2e; --card-border:#22304a; --text:#eef1f8; --muted:#8b95ab;
+    --purple:#6d5efc; --blue:#4f8cff; --green:#2ee6a6; --red:#ff5b5b;
+    --gradient: linear-gradient(90deg, #6d5efc, #4f8cff);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--text); height:100%;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .hidden { display:none !important; }
+  .topbar { padding:calc(14px + env(safe-area-inset-top,0px)) 18px 10px; font-weight:700; font-size:18px;
+    border-bottom:1px solid var(--card-border); }
+  #app { padding:14px 14px 90px; max-width:480px; margin:0 auto; }
+
+  .rules-screen { display:flex; align-items:center; justify-content:center; min-height:70vh; }
+  .rules-card { background:var(--card); border:1px solid #4a2530; border-radius:18px; padding:28px 22px; text-align:center; max-width:420px; }
+  .warn-icon { width:64px; height:64px; line-height:64px; background:#3a1620; border-radius:50%; font-size:28px; margin:0 auto 16px; }
+  .rules-list { list-style:none; padding:0; margin:10px 0 16px; text-align:left; display:inline-block; }
+  .rules-list li { margin:6px 0; }
+  .rules-list b { color:var(--red); }
+  .rules-note { color:var(--muted); font-size:14px; margin-bottom:20px; }
+  .danger { color:var(--red); }
+
+  .profile-bar { background:var(--card); border:1px solid var(--card-border); border-radius:16px; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .profile-left { display:flex; align-items:center; gap:12px; }
+  .logo-circle { width:44px; height:44px; border-radius:50%; background:var(--gradient); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .profile-name { font-weight:700; font-size:16px; }
+  .profile-greet { color:var(--purple); font-size:13px; }
+  .wallet-pill { background:rgba(46,230,166,.12); color:var(--green); border-radius:20px; padding:8px 14px; font-weight:700; font-size:14px; }
+
+  .card { background:var(--card); border:1px solid var(--card-border); border-radius:16px; padding:18px; margin-bottom:14px; }
+  .card-title { color:var(--purple); font-weight:700; font-size:13px; letter-spacing:.5px; margin-bottom:12px; }
+  .divider { border:none; border-top:1px solid var(--card-border); margin:10px 0 16px; }
+  .input { width:100%; background:#0d1626; border:1px solid var(--card-border); border-radius:12px; padding:13px 14px;
+    color:var(--text); font-size:14px; margin-bottom:14px; outline:none; }
+  .input::placeholder { color:#5c6683; }
+  .btn { width:100%; border:none; border-radius:12px; padding:14px; font-weight:700; font-size:15px; cursor:pointer; color:#fff; }
+  .btn-primary { background:var(--gradient); }
+  .btn-danger { background:var(--red); }
+  .btn-success { background:linear-gradient(90deg,#22c98f,#2ee6a6); }
+  .btn-small { width:auto; padding:12px 20px; }
+
+  .stat-row { display:flex; gap:12px; margin-bottom:14px; }
+  .stat-card { flex:1; text-align:left; }
+  .stat-label { color:var(--muted); font-size:12px; letter-spacing:.5px; margin-bottom:8px; }
+  .stat-label.green { color:var(--green); }
+  .stat-value { font-size:24px; font-weight:800; }
+  .stat-value.green { color:var(--green); }
+  .green-border { border-color:#1f5c46; }
+  .cpm-card { background:linear-gradient(135deg,#211a4a,#16213d); display:flex; align-items:center; justify-content:space-between; }
+  .cpm-title { color:var(--purple); font-weight:700; font-size:13px; }
+  .cpm-sub { color:var(--muted); font-size:12px; margin-top:4px; }
+  .cpm-value { font-size:26px; font-weight:800; color:var(--purple); }
+
+  .section-title { margin:6px 0 12px; font-size:17px; }
+  .links-list .card { padding:14px 16px; }
+  .link-url { color:var(--purple); font-size:14px; word-break:break-all; }
+  .link-original { color:var(--muted); font-size:12px; margin-top:2px; word-break:break-all; }
+  .link-footer { display:flex; gap:16px; margin-top:10px; font-size:13px; color:var(--muted); }
+  .link-footer .earn { color:var(--green); font-weight:700; }
+  .empty-msg { color:var(--muted); text-align:center; padding:20px 0; }
+
+  .refer-card { text-align:center; }
+  .refer-icon { width:72px; height:72px; border-radius:50%; margin:0 auto 14px; background:#1a2440; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .pill-green { background:rgba(46,230,166,.15); color:var(--green); padding:2px 8px; border-radius:8px; }
+  .ref-link-row { display:flex; gap:10px; margin-top:16px; }
+  .ref-link-row .input { margin-bottom:0; }
+
+  .balance-card { background:linear-gradient(135deg,#123a2d,#0f2436); border-color:#1f5c46; text-align:center; }
+  .balance-label { color:var(--green); font-size:14px; margin-bottom:8px; }
+  .balance-value { font-size:40px; font-weight:800; margin-bottom:8px; }
+  .balance-min { color:var(--muted); font-size:13px; }
+  .field-label { display:block; color:var(--muted); font-size:13px; margin-bottom:8px; }
+
+  .profile-card { text-align:center; }
+  .avatar-circle { width:84px; height:84px; border-radius:50%; margin:0 auto 14px; background:var(--gradient);
+    display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:800; }
+  .id-pill { display:inline-block; background:#1a2447; color:var(--purple); padding:6px 14px; border-radius:20px; margin-top:10px; font-size:13px; }
+  .social-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; color:var(--text); text-decoration:none; font-size:14px; }
+  .footer-credit { text-align:center; color:var(--muted); font-size:12px; margin-top:20px; }
+
+  .bottom-nav { position:fixed; left:0; right:0; bottom:0; background:#0d1626; border-top:1px solid var(--card-border);
+    display:flex; padding-bottom:env(safe-area-inset-bottom,0px); }
+  .nav-btn { flex:1; background:none; border:none; color:var(--muted); padding:10px 0 8px; font-size:11px;
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .nav-btn span { font-size:18px; }
+  .nav-btn.active { color:var(--blue); }
+
+  .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:#1a2447; color:#fff;
+    padding:10px 18px; border-radius:10px; font-size:13px; z-index:999; }
+
+  .adgate-screen { display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; }
+  .spinner { width:46px; height:46px; border:4px solid #2a3550; border-top-color:#6d5efc; border-radius:50%;
+    margin:0 auto 18px; animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .adgate-screen p { color:#9aa4bf; font-size:14px; }
+</style>
+</head>
+<body>
+
+  <header class="topbar" id="topbar">TeleShort Link</header>
+
+  <main id="app">
+
+    <!-- Ad-gate screen: shown when URL hash is #/s/CODE -->
+    <section id="adGateScreen" class="screen adgate-screen hidden">
+      <div>
+        <div class="spinner"></div>
+        <p id="adGateStatus">Loading ad, please wait...</p>
+      </div>
+    </section>
+
+    <!-- Rules gate -->
+    <section id="rulesScreen" class="screen rules-screen hidden">
+      <div class="rules-card">
+        <div class="warn-icon">⚠️</div>
+        <h2>Important Rules!</h2>
+        <ul class="rules-list">
+          <li><b>1.</b> NO VPN Allowed.</li>
+          <li><b>2.</b> NO Self-Clicking.</li>
+        </ul>
+        <p class="rules-note">Violations will result in an instant <b class="danger">Account BAN</b> without payout.</p>
+        <button id="agreeBtn" class="btn btn-danger">I Agree</button>
+      </div>
+    </section>
+
+    <!-- App shell -->
+    <div id="appShell" class="hidden">
+
+      <div class="profile-bar">
+        <div class="profile-left">
+          <div class="logo-circle">⚡</div>
+          <div>
+            <div class="profile-name">TeleShort</div>
+            <div class="profile-greet">Hello, <span id="greetName">User</span>!</div>
+          </div>
+        </div>
+        <div class="wallet-pill">💰 <span id="walletBalance">$0.00</span></div>
+      </div>
+
+      <section id="tab-home" class="tab-content">
+        <div class="card create-link-card">
+          <div class="card-title">🔗 CREATE SHORT LINK</div>
+          <input id="longUrlInput" class="input" type="text" placeholder="Paste your long URL here..." />
+          <button id="shortenBtn" class="btn btn-primary">✨ Shorten &amp; Earn</button>
+        </div>
+        <div class="stat-row">
+          <div class="card stat-card">
+            <div class="stat-label">TODAY'S EARN</div>
+            <div class="stat-value green" id="todayEarn">$0.0000</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">TOTAL VIEWS</div>
+            <div class="stat-value" id="totalViews">0</div>
+          </div>
+        </div>
+        <div class="card cpm-card">
+          <div>
+            <div class="cpm-title">GLOBAL CPM RATE</div>
+            <div class="cpm-sub">Valid for all countries</div>
+          </div>
+          <div class="cpm-value" id="cpmRate">$5.00</div>
+        </div>
+      </section>
+
+      <section id="tab-links" class="tab-content hidden">
+        <h3 class="section-title">🔗 My Links</h3>
+        <div id="linksList" class="links-list"><p class="empty-msg">No links yet. Create one from Home.</p></div>
+      </section>
+
+      <section id="tab-refer" class="tab-content hidden">
+        <div class="card refer-card">
+          <div class="refer-icon">👥</div>
+          <h2>Invite Friends</h2>
+          <p>Earn a lifetime <span class="pill-green" id="referPercent">1%</span> commission from your friends' earnings!</p>
+          <div class="ref-link-row">
+            <input id="refLinkInput" class="input" type="text" readonly />
+            <button id="copyRefBtn" class="btn btn-primary btn-small">Copy</button>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="card stat-card">
+            <div class="stat-label">TOTAL REFERRALS</div>
+            <div class="stat-value" id="totalReferrals">0</div>
+          </div>
+          <div class="card stat-card green-border">
+            <div class="stat-label green">TOTAL EARNED</div>
+            <div class="stat-value green" id="referralEarned">$0.00</div>
+          </div>
+        </div>
+        <h3 class="section-title">📋 Referrals List</h3>
+        <div id="referralsList" class="links-list"><p class="empty-msg">You have not referred anyone yet.</p></div>
+      </section>
+
+      <section id="tab-wallet" class="tab-content hidden">
+        <h3 class="section-title">💼 My Wallet</h3>
+        <div class="card balance-card">
+          <div class="balance-label">Available Balance</div>
+          <div class="balance-value" id="availBalance">$0.00</div>
+          <div class="balance-min">Minimum Withdrawal: <b id="minWithdraw">$5.00</b></div>
+        </div>
+        <div class="card">
+          <div class="card-title">REQUEST PAYOUT</div>
+          <hr class="divider" />
+          <label class="field-label">Select Payment Method</label>
+          <select id="payoutMethod" class="input">
+            <option value="">Choose Method...</option>
+            <option value="upi">UPI</option>
+            <option value="binance">Binance Pay</option>
+            <option value="usdt_trc20">USDT (TRC20)</option>
+            <option value="paypal">PayPal</option>
+          </select>
+          <label class="field-label">Payment Details (UPI/Address/Number)</label>
+          <input id="payoutDetails" class="input" type="text" placeholder="Enter valid details..." />
+          <label class="field-label">Amount to Withdraw ($)</label>
+          <input id="payoutAmount" class="input" type="number" placeholder="0.00" />
+          <button id="submitPayoutBtn" class="btn btn-success">💱 Submit Request</button>
+        </div>
+        <h3 class="section-title">↺ Payout History</h3>
+        <div id="payoutHistory" class="links-list"><p class="empty-msg">No transactions yet.</p></div>
+      </section>
+
+      <section id="tab-profile" class="tab-content hidden">
+        <div class="card profile-card">
+          <div class="avatar-circle" id="avatarInitial">U</div>
+          <h2 id="profileName">User</h2>
+          <div class="id-pill">ID: <span id="profileId">-</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">SOCIAL LINKS</div>
+          <a href="#" id="officialChannelLink" target="_blank" class="social-row"><span>📣 Official Channel</span><span>↗</span></a>
+          <hr class="divider" />
+          <a href="#" id="youtubeChannelLink" target="_blank" class="social-row"><span>▶️ YouTube Channel</span><span>↗</span></a>
+        </div>
+        <p class="footer-credit">Developed &amp; Maintained by <b>You</b></p>
+      </section>
+
+    </div>
+  </main>
+
+  <nav id="bottomNav" class="bottom-nav hidden">
+    <button class="nav-btn active" data-tab="home"><span>🏠</span>Home</button>
+    <button class="nav-btn" data-tab="links"><span>🔗</span>Links</button>
+    <button class="nav-btn" data-tab="refer"><span>👥</span>Refer</button>
+    <button class="nav-btn" data-tab="wallet"><span>💼</span>Wallet</button>
+    <button class="nav-btn" data-tab="profile"><span>👤</span>Profile</button>
+  </nav>
+
+  <div id="toast" class="toast hidden"></div>
+
+<script type="module">
+/* =========================================================================
+   1) CONFIG — এইগুলো নিজের মতো করে বসাও
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
+
+const ADSGRAM_BLOCK_ID   = "int-00000";          // Adsgram.ai থেকে real Block ID বসাও
+const BOT_USERNAME       = "your_bot";           // @ ছাড়া তোমার bot username
+const OFFICIAL_CHANNEL   = "https://t.me/your_channel";
+const YOUTUBE_CHANNEL    = "https://www.youtube.com/@your_channel";
+
+const CPM_RATE           = 5.00;   // $ per 1000 valid views
+const MIN_WITHDRAWAL     = 5.00;
+const REFERRAL_PERCENT   = 1;      // %
+const VIEW_COOLDOWN_MS   = 24 * 60 * 60 * 1000; // same browser + same link এ আবার count হতে যত সময় লাগবে
+
+/* =========================================================================
+   2) FIREBASE INIT (CDN theke module import, kono npm/build lage na)
+   ========================================================================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection,
+  query, where, orderBy, getDocs, runTransaction, increment,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+/* =========================================================================
+   3) TELEGRAM WEBAPP
+   ========================================================================= */
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ⚠️ Server na thakay initData cryptographically verify kora hocche na.
+// initDataUnsafe theke pawa user info trust kora hocche — MVP/soft-launch er jonno thik ache,
+// spoof-proof na. Pore Cloud Functions diye HMAC verify যোগ kora jete pare.
+function getTelegramUser() {
+  return tg?.initDataUnsafe?.user || { id: "guest_" + (localStorage.getItem("guestId") || makeGuestId()), first_name: "Guest" };
+}
+function makeGuestId() {
+  const id = Math.random().toString(36).slice(2, 10);
+  localStorage.setItem("guestId", id);
+  return id;
+}
+function getStartParam() {
+  return tg?.initDataUnsafe?.start_param || new URLSearchParams(location.search).get("start") || "";
+}
+
+let currentUser = null; // { id, firstName, username, walletBalance, referredBy }
+
+/* =========================================================================
+   4) HELPERS
+   ========================================================================= */
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 2200);
+}
+function fmtMoney(n, decimals = 4) { return "$" + Number(n || 0).toFixed(decimals); }
+function genCode(len = 7) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+function shortUrlFor(code) {
+  return `${location.origin}${location.pathname}#/s/${code}`;
+}
+
+/* =========================================================================
+   5) FIRESTORE DATA LAYER
+   ========================================================================= */
+async function ensureUser(tgUser, referredBy) {
+  const uid = String(tgUser.id);
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    await updateDoc(ref, { firstName: tgUser.first_name || "", username: tgUser.username || "" });
+    return { id: uid, ...data };
+  }
+
+  const data = {
+    firstName: tgUser.first_name || "",
+    username: tgUser.username || "",
+    walletBalance: 0,
+    referredBy: referredBy && String(referredBy) !== uid ? String(referredBy) : null,
+    createdAt: Date.now(),
+  };
+  await setDoc(ref, data);
+  return { id: uid, ...data };
+}
+
+async function createLink(userId, url) {
+  const code = genCode();
+  await setDoc(doc(db, "links", code), {
+    userId: String(userId),
+    originalUrl: url,
+    views: 0,
+    earnings: 0,
+    createdAt: Date.now(),
+  });
+  return code;
+}
+
+async function getLinks(userId) {
+  const q = query(collection(db, "links"), where("userId", "==", String(userId)), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ code: d.id, ...d.data() }));
+}
+
+async function getWallet(userId) {
+  const uref = doc(db, "users", String(userId));
+  const usnap = await getDoc(uref);
+  const balance = usnap.exists() ? usnap.data().walletBalance || 0 : 0;
+
+  const links = await getLinks(userId);
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayEarn = links
+    .filter((l) => l.createdAt >= todayStart.getTime())
+    .reduce((sum, l) => sum + (l.earnings || 0), 0);
+  const totalViews = links.reduce((sum, l) => sum + (l.views || 0), 0);
+
+  return { walletBalance: balance, todayEarn, totalViews };
+}
+
+async function getReferrals(userId) {
+  const q = query(collection(db, "users"), where("referredBy", "==", String(userId)));
+  const snap = await getDocs(q);
+  const referrals = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  let totalEarned = 0;
+  for (const r of referrals) {
+    const links = await getLinks(r.id);
+    totalEarned += links.reduce((s, l) => s + (l.earnings || 0), 0) * (REFERRAL_PERCENT / 100);
+  }
+  return { referrals, totalReferrals: referrals.length, totalEarned };
+}
+
+async function submitPayout(userId, method, details, amount) {
+  const uref = doc(db, "users", String(userId));
+  await runTransaction(db, async (tx) => {
+    const usnap = await tx.get(uref);
+    const balance = usnap.exists() ? usnap.data().walletBalance || 0 : 0;
+    if (amount < MIN_WITHDRAWAL) throw new Error(`Minimum withdrawal is ${fmtMoney(MIN_WITHDRAWAL, 2)}`);
+    if (balance < amount) throw new Error("Insufficient balance");
+    tx.update(uref, { walletBalance: increment(-amount) });
+  });
+  await addDoc(collection(db, "payouts"), {
+    userId: String(userId), method, details, amount, status: "pending", createdAt: Date.now(),
+  });
+}
+
+async function getPayouts(userId) {
+  const q = query(collection(db, "payouts"), where("userId", "==", String(userId)), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data());
+}
+
+// Ad dekha shesh hole call hoy: view+earning credit kore, redirect URL return kore
+async function completeView(code) {
+  const cooldownKey = "viewed_" + code;
+  const last = parseInt(localStorage.getItem(cooldownKey) || "0", 10);
+  const onCooldown = Date.now() - last < VIEW_COOLDOWN_MS;
+
+  const linkRef = doc(db, "links", code);
+  const linkSnap = await getDoc(linkRef);
+  if (!linkSnap.exists()) throw new Error("Link not found");
+  const link = linkSnap.data();
+
+  if (!onCooldown) {
+    const perView = CPM_RATE / 1000;
+    await runTransaction(db, async (tx) => {
+      const ownerRef = doc(db, "users", link.userId);
+      const ownerSnap = await tx.get(ownerRef);
+
+      tx.update(linkRef, { views: increment(1), earnings: increment(perView) });
+      if (ownerSnap.exists()) {
+        tx.update(ownerRef, { walletBalance: increment(perView) });
+        const referredBy = ownerSnap.data().referredBy;
+        if (referredBy) {
+          const refRef = doc(db, "users", referredBy);
+          const refSnap = await tx.get(refRef);
+          if (refSnap.exists()) {
+            tx.update(refRef, { walletBalance: increment((perView * REFERRAL_PERCENT) / 100) });
+          }
+        }
+      }
+    });
+    localStorage.setItem(cooldownKey, String(Date.now()));
+  }
+
+  return link.originalUrl;
+}
+
+/* =========================================================================
+   6) AD-GATE SCREEN  (hash route: #/s/CODE)
+   ========================================================================= */
+function loadAdsgramScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Adsgram) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://sad.adsgram.ai/js/sad.min.js";
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function runAdGate(code) {
+  document.getElementById("adGateScreen").classList.remove("hidden");
+  document.getElementById("rulesScreen").classList.add("hidden");
+  document.getElementById("appShell").classList.add("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  document.getElementById("topbar").classList.add("hidden");
+
+  const statusEl = document.getElementById("adGateStatus");
+
+  async function finish() {
+    statusEl.textContent = "Redirecting...";
+    try {
+      const url = await completeView(code);
+      window.location.href = url;
+    } catch (e) {
+      statusEl.textContent = e.message || "Link not found.";
+    }
+  }
+
+  try {
+    await loadAdsgramScript();
+    const controller = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    controller.show().then(finish).catch(finish);
+  } catch (e) {
+    // Adsgram load na hole (e.g. placeholder block id) — fallback e 2.5s por redirect
+    setTimeout(finish, 2500);
+  }
+}
+
+/* =========================================================================
+   7) MAIN APP (tabs, forms)
+   ========================================================================= */
+document.getElementById("agreeBtn").addEventListener("click", () => {
+  localStorage.setItem("rulesAccepted", "1");
+  document.getElementById("rulesScreen").classList.add("hidden");
+  bootApp();
+});
+
+document.querySelectorAll(".nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab-content").forEach((el) => el.classList.add("hidden"));
+  document.getElementById("tab-" + tab).classList.remove("hidden");
+  document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  if (tab === "links") loadLinksUI();
+  if (tab === "refer") loadReferralsUI();
+  if (tab === "wallet") { loadWalletUI(); loadPayoutsUI(); }
+  if (tab === "home") loadWalletUI();
+}
+
+async function bootApp() {
+  document.getElementById("appShell").classList.remove("hidden");
+  document.getElementById("bottomNav").classList.remove("hidden");
+
+  const tgUser = getTelegramUser();
+  const startParam = getStartParam();
+
+  try {
+    currentUser = await ensureUser(tgUser, startParam);
+  } catch (e) {
+    showToast("DB error: " + e.message + " (Firebase config saThik korecho to?)");
+    currentUser = { id: tgUser.id, firstName: tgUser.first_name, walletBalance: 0 };
+  }
+
+  document.getElementById("greetName").textContent = currentUser.firstName || "User";
+  document.getElementById("profileName").textContent = currentUser.firstName || "User";
+  document.getElementById("profileId").textContent = currentUser.id;
+  document.getElementById("avatarInitial").textContent = (currentUser.firstName || "U")[0].toUpperCase();
+  document.getElementById("refLinkInput").value = `https://t.me/${BOT_USERNAME}?start=${currentUser.id}`;
+  document.getElementById("officialChannelLink").href = OFFICIAL_CHANNEL;
+  document.getElementById("youtubeChannelLink").href = YOUTUBE_CHANNEL;
+  document.getElementById("cpmRate").textContent = fmtMoney(CPM_RATE, 2);
+  document.getElementById("minWithdraw").textContent = fmtMoney(MIN_WITHDRAWAL, 2);
+  document.getElementById("referPercent").textContent = REFERRAL_PERCENT + "%";
+
+  loadWalletUI();
+}
+
+document.getElementById("shortenBtn").addEventListener("click", async () => {
+  const input = document.getElementById("longUrlInput");
+  const url = input.value.trim();
+  if (!/^https?:\/\//i.test(url)) return showToast("Valid http(s) URL দাও");
+
+  try {
+    const code = await createLink(currentUser.id, url);
+    input.value = "";
+    navigator.clipboard?.writeText(shortUrlFor(code)).catch(() => {});
+    showToast("Short link created & copied!");
+    switchTab("links");
+  } catch (e) {
+    showToast(e.message);
+  }
+});
+
+async function loadWalletUI() {
+  try {
+    const w = await getWallet(currentUser.id);
+    document.getElementById("walletBalance").textContent = fmtMoney(w.walletBalance, 2);
+    document.getElementById("todayEarn").textContent = fmtMoney(w.todayEarn, 4);
+    document.getElementById("totalViews").textContent = w.totalViews;
+    document.getElementById("availBalance").textContent = fmtMoney(w.walletBalance, 2);
+  } catch (e) { /* ignore */ }
+}
+
+async function loadLinksUI() {
+  const list = document.getElementById("linksList");
+  try {
+    const links = await getLinks(currentUser.id);
+    if (!links.length) { list.innerHTML = '<p class="empty-msg">No links yet. Create one from Home.</p>'; return; }
+    list.innerHTML = links.map((l) => `
+      <div class="card">
+        <div class="link-url">${shortUrlFor(l.code)}</div>
+        <div class="link-original">${l.originalUrl}</div>
+        <div class="link-footer"><span>👁 ${l.views}</span><span class="earn">🪙 ${fmtMoney(l.earnings, 4)}</span></div>
+      </div>`).join("");
+  } catch (e) { list.innerHTML = `<p class="empty-msg">${e.message}</p>`; }
+}
+
+document.getElementById("copyRefBtn").addEventListener("click", () => {
+  navigator.clipboard?.writeText(document.getElementById("refLinkInput").value);
+  showToast("Referral link copied!");
+});
+
+async function loadReferralsUI() {
+  const list = document.getElementById("referralsList");
+  try {
+    const { referrals, totalReferrals, totalEarned } = await getReferrals(currentUser.id);
+    document.getElementById("totalReferrals").textContent = totalReferrals;
+    document.getElementById("referralEarned").textContent = fmtMoney(totalEarned, 2);
+    if (!referrals.length) { list.innerHTML = '<p class="empty-msg">You have not referred anyone yet.</p>'; return; }
+    list.innerHTML = referrals.map((r) => `<div class="card"><b>${r.firstName || "User"}</b> ${r.username ? "@" + r.username : ""}</div>`).join("");
+  } catch (e) { list.innerHTML = `<p class="empty-msg">${e.message}</p>`; }
+}
+
+document.getElementById("submitPayoutBtn").addEventListener("click", async () => {
+  const method = document.getElementById("payoutMethod").value;
+  const details = document.getElementById("payoutDetails").value.trim();
+  const amount = parseFloat(document.getElementById("payoutAmount").value);
+
+  if (!method || !details || !amount) return showToast("সব ফিল্ড পূরণ করো");
+
+  try {
+    await submitPayout(currentUser.id, method, details, amount);
+    showToast("Payout requested!");
+    document.getElementById("payoutDetails").value = "";
+    document.getElementById("payoutAmount").value = "";
+    loadWalletUI(); loadPayoutsUI();
+  } catch (e) { showToast(e.message); }
+});
+
+async function loadPayoutsUI() {
+  const list = document.getElementById("payoutHistory");
+  try {
+    const rows = await getPayouts(currentUser.id);
+    if (!rows.length) { list.innerHTML = '<p class="empty-msg">No transactions yet.</p>'; return; }
+    list.innerHTML = rows.map((p) => `
+      <div class="card">
+        <div>${p.method.toUpperCase()} — ${fmtMoney(p.amount, 2)}</div>
+        <div class="link-original">${p.details}</div>
+        <div class="link-footer"><span>Status: ${p.status}</span></div>
+      </div>`).join("");
+  } catch (e) { list.innerHTML = `<p class="empty-msg">${e.message}</p>`; }
+}
+
+/* =========================================================================
+   8) ROUTER — normal app vs ad-gate (#/s/CODE)
+   ========================================================================= */
+function route() {
+  const hash = location.hash;
+  if (hash.startsWith("#/s/")) {
+    const code = hash.slice(4);
+    runAdGate(code);
+  } else if (localStorage.getItem("rulesAccepted") === "1") {
+    document.getElementById("rulesScreen").classList.add("hidden");
+    bootApp();
+  } else {
+    document.getElementById("rulesScreen").classList.remove("hidden");
+  }
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
